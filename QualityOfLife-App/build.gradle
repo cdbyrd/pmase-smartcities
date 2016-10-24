@@ -1,0 +1,64 @@
+plugins {
+    id 'groovy'
+    id 'application'
+    id 'build-dashboard'
+    id 'project-report'
+    id 'eclipse'
+}
+
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+project.ext {
+    groovyVersion = '2.3.6'
+    gradleVersion = '2.7'
+    spockVersion = '1.0-groovy-2.3'
+
+    arguments = project.hasProperty('args') ? args.tokenize(' ') : []
+}
+
+project.with {
+    group 'com.scda.qol'
+    version '2.0'
+    description = 'A quality of life (qol) calculator based on the work from numbeo.com'
+
+    defaultTasks 'run'
+
+    //This is the class that is called when using the "run" task
+    mainClassName = 'com.scda.qol.CalcRunner'
+
+    wrapper.gradleVersion = "$gradleVersion"
+}
+
+dependencies {
+    compile group: 'org.codehaus.groovy', name: 'groovy-all', version: "$groovyVersion"
+    compile group: 'org.codehaus.groovy.modules.http-builder', name: 'http-builder', version: '0.7'
+    compile group: 'org.apache.commons', name: 'commons-csv', version: '1.2'
+
+    testCompile group: 'org.spockframework', name: 'spock-core', version: "$spockVersion"
+}
+
+tasks.withType(JavaExec) {
+    // Assign all Java system properties from
+    // the command line to the JavaExec task.
+    systemProperties System.properties
+}
+
+task exportData(dependsOn:'classes', type:JavaExec) {
+    main = 'com.scda.data.ExportRunner'
+    classpath = sourceSets.main.runtimeClasspath
+
+    // should contain the type of export to run 'Numbeo' | 'Zillow'
+    args = arguments
+}
+
+task restCall(dependsOn:'classes', type:JavaExec) {
+    main = 'com.scda.data.HttpClient'
+    classpath = sourceSets.main.runtimeClasspath
+
+    // should contain the api path and then any additional querystring items
+    // example:  "/api/city_prices  city_id=3391"
+    args = arguments
+}
